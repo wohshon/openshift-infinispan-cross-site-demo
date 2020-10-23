@@ -38,35 +38,35 @@ RHDG installation is done via the Operator Lifecycle Manager on OCP, official do
 
 - Create identical namespaces / projects on both clusters
 
-    oc new-project rhdg-cluster
+        oc new-project rhdg-cluster
 
 - on cluster1, create service account `c1`
 
-    oc create sa c1
+        oc create sa c1
 
 - Grant role to service account, the document says grant `view` access for the project but I encountered a lot of permission issues during the initial setup, not wanting to lose the big picture of setting up the cross site deployment, I decided to use a full admin role, since this is just a demo :( 
 
-  oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:rhdg-cluster:c1
+        oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:rhdg-cluster:c1
 
 - You may want to extract the token and save it, for later use
   
-  oc sa get-token c1 > c1.txt
+        oc sa get-token c1 > c1.txt
 
 - Same goes for cluster2, c2, create namespace, create service account, grant role and extract the token out 
 
-    oc new-project rhdg-cluster
+        oc new-project rhdg-cluster
 
-    oc create sa c2
+        oc create sa c2
 
-    oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:rhdg-cluster:c2
+        oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:rhdg-cluster:c2
 
-    oc sa get-token c2 > c2.txt
+        oc sa get-token c2 > c2.txt
 
 - then on BOTH clusters, generate the secrets, this is for the current project to access the other cluster
 
-    oc create secret generic c1-token --from-literal=token=$(cat c1.txt)
+        oc create secret generic c1-token --from-literal=token=$(cat c1.txt)
     
-    oc create secret generic c2-token --from-literal=token=$(cat c2.txt)
+        oc create secret generic c2-token --from-literal=token=$(cat c2.txt)
 
 
 OK, the scaffolding stuffs should be done by now. Next step is to deploy the RHDG cluster on both sides, as we have already deployed the operator. 
@@ -146,32 +146,32 @@ spec:
 
 e.g. on cluster 1
 
-    oc create -f c1-cluster.yaml 
+        oc create -f c1-cluster.yaml 
     
 Upon successful deployment of the RHDG cluster, you should be able to see one operator pod, 2 RHDG pods
 
-    NAME                                  READY   STATUS    RESTARTS   AGE
-    example-infinispan-0                  1/1     Running   0          39m
-    example-infinispan-1                  1/1     Running   0          38m
-    infinispan-operator-668d7c565-s49jb   1/1     Running   0          10h
+        NAME                                  READY   STATUS    RESTARTS   AGE
+        example-infinispan-0                  1/1     Running   0          39m
+        example-infinispan-1                  1/1     Running   0          38m
+        infinispan-operator-668d7c565-s49jb   1/1     Running   0          10h
     
 The following services should be generated as well
 
-    NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP                                       PORT(S)          AGE
-    example-infinispan        ClusterIP      172.30.27.101    <none>                                            11222/TCP        10h
-    example-infinispan-ping   ClusterIP      None             <none>                                            8888/TCP         10h
-    example-infinispan-site   LoadBalancer   172.30.142.140   <elb endpoint>.ap-southeast-1.elb.amazonaws.com   7900:30256/TCP   10h
+        NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP                                       PORT(S)          AGE
+        example-infinispan        ClusterIP      172.30.27.101    <none>                                            11222/TCP        10h
+        example-infinispan-ping   ClusterIP      None             <none>                                            8888/TCP         10h
+        example-infinispan-site   LoadBalancer   172.30.142.140   <elb endpoint>.ap-southeast-1.elb.amazonaws.com   7900:30256/TCP   10h
 
 As I chose a `Route` endpoint for the cluster, you will be able to see a route object
 
-    NAME                          HOST/PORT          PATH   SERVICES             PORT    TERMINATION   WILDCARD
-    example-infinispan-external   <route hostname>          example-infinispan   <all>   passthrough   None
+        NAME                          HOST/PORT          PATH   SERVICES             PORT    TERMINATION   WILDCARD
+        example-infinispan-external   <route hostname>          example-infinispan   <all>   passthrough   None
 
 To ensure the cross-site setup is successful, check the logs on both clusters, they should look similar to this (from cluster 2):
 
-    $ oc logs -f example-infinispan-0 | grep x-site
-    15:34:04,172 INFO  (jgroups-100,example-infinispan-0-64507) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c2]
-    15:34:04,378 INFO  (jgroups-98,example-infinispan-0-64507) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c1, c2]
+        $ oc logs -f example-infinispan-0 | grep x-site
+        15:34:04,172 INFO  (jgroups-100,example-infinispan-0-64507) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c2]
+        15:34:04,378 INFO  (jgroups-98,example-infinispan-0-64507) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c1, c2]
 
 You can also see a `configmap` generated to hold the configuration of the infinispan cluster
 
@@ -189,12 +189,12 @@ The web / admin console of the RHDG cluster can be access via the exposed route.
 
 Use the hostname (port 80) of the route to access the admin console. You will be prompted for the credentials and if you have yet to get them, go to the terminal and run this:  
 
-    $ oc get secret example-infinispan-generated-secret -o jsonpath="{.data.identities\.yaml}" | base64 --decode
-    credentials:
-    - username: developer
-      password: xxxxxxxx
-    - username: operator
-      password: xxxxxxxx
+        $ oc get secret example-infinispan-generated-secret -o jsonpath="{.data.identities\.yaml}" | base64 --decode
+        credentials:
+        - username: developer
+          password: xxxxxxxx
+        - username: operator
+          password: xxxxxxxx
 
 Use the `operator` credentials to login
 
@@ -252,7 +252,7 @@ Other things to be aware of, as the cache uses the protostream media type, to us
 ![Seach entries](images/dg-6.png "Search")
 
 
-- Failover
+##### Failover
 
 For single site failover, as long as I keep one running RHDG pod, no data will be lost. 
 
@@ -262,7 +262,7 @@ To sync the data from backup site, I need to go over to the backup site's web co
 
 We have just scratched the surface of a simple cross site setup, hope this is useful! That's all for now!
 
--- Woh Shon
+-- Woh Shon 24 OCT 2020
 
 
 
