@@ -36,6 +36,11 @@ For the LoadBalancer ingress, the Infinispan Operator [checks](https://github.co
 
 RHDG installation is done via the Operator Lifecycle Manager on OCP, official docs [here](https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/running_data_grid_on_openshift/index)
 
+I will not be detailing the steps here, as it is pretty straightforward.
+
+After you installed the operator, proceed with the following steps:
+
+
 - Create identical namespaces / projects on both clusters
 
         oc new-project rhdg-cluster
