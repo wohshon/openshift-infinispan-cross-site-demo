@@ -1,0 +1,1 @@
+# openshift-infinispan-cross-site-demo
