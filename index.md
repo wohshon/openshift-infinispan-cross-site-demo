@@ -27,14 +27,14 @@ c2 : cluster2
 
 ### Environment setup
 
-I have access to 2 running OCP clusters in AWS, all in ap-southeast region. For this demo, having the clusters deployed in a public cloud is crucial as I will be using the `LoadBalancer` ingress to connect the 2 RHDG clusters. For on premise setup, the other option is to use a `NodePort`, I have yet to try it. 
+I have access to 2 running OCP clusters in AWS, all in ap-southeast region. For this demo, having the clusters deployed in a public cloud is **crucial** as I will be using the `LoadBalancer` ingress to connect the 2 RHDG clusters. For on premise setup, the other option is to use a `NodePort`, I have yet to try it. 
 For the LoadBalancer ingress, the Infinispan Operator [checks](https://github.com/infinispan/infinispan-operator/blob/af542c4e456b42a962b1a07fe62f8559c23ec784/pkg/controller/infinispan/xsite.go#L206) for the `Service`'s object `LoadBalancer: ingress` value, so if you try to hack it with the `ExternalIPs` of your own load balancer, it will not work.
 
 #### Setting up the base environment
 
 - Install RHDG
 
-RHDG installation is done via the Operator Lifecycle Manager on OCP, official docs (here)[https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/running_data_grid_on_openshift/index]
+RHDG installation is done via the Operator Lifecycle Manager on OCP, official docs [here](https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/running_data_grid_on_openshift/index)
 
 - Create identical namespaces / projects on both clusters
 
