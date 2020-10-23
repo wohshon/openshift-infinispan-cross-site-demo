@@ -8,7 +8,7 @@ This demo uses Red Hat's distribution of the opensource **Infinispan** in-memory
 - **Openshift Container Platform** or OCP, version 4.5
 
 The setup is pretty straight forward:
-
+<pre>
   +--------------+                                 +--------------+
   
   | RHDG - c1    |      <--------------------->    | RHDG - c2    |
@@ -20,7 +20,7 @@ The setup is pretty straight forward:
 |     Openshift      |                          |     Openshift      |
 
 +--------------------+                          +--------------------+
-
+</pre>
 c1 : cluster1
 
 c2 : cluster2
