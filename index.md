@@ -198,10 +198,16 @@ Use the hostname (port 80) of the route to access the admin console. You will be
 
 Use the `operator` credentials to login
 
-Using the web console, `Data Container / Create Cache` (I will upload screenshots later, but I trust you will be able to find your way around a pretty intuitive UI.
+Using the web console, `Data Container / Create Cache` 
+
+![create cache](images/dg-3.png "Create Cache")
+
+![create cache](images/dg-4.png "Create Cache")
+
 
 - Paste this following xml config to create a cache in cluster 1
 
+```
     <infinispan>
       <cache-container>
         <distributed-cache name="cache-xsite">
@@ -214,9 +220,10 @@ Using the web console, `Data Container / Create Cache` (I will upload screenshot
         </distributed-cache>
       </cache-container>
     </infinispan>
-
+```
 - Likewise for cluster 2
 
+```
     <infinispan>
       <cache-container>
         <replicated-cache name="cache-xsite">
@@ -229,6 +236,7 @@ Using the web console, `Data Container / Create Cache` (I will upload screenshot
         </replicated-cache>
       </cache-container>
     </infinispan>
+```
 
 #### Test Drive
 
@@ -238,14 +246,19 @@ You can use a Hotrod springboot client I have written [here](https://github.com/
 - you can use the web console to verify the cross cluster synchronization as well.
 
 Other things to be aware of, as the cache uses the protostream media type, to use the web console to view the cache entries, you will need to define the Protobuf Schema (e.g. the demo.PersonEntity protobuf scheme in the sample code) before the web console actually works.
-(screenshots later)
+
+![create protobuf schema](images/dg-5.png "Create ProtoBuf Schema")
+
+![Seach entries](images/dg-6.png "Search")
+
 
 - Failover
 
 For single site failover, as long as I keep one running RHDG pod, no data will be lost. 
 
 If I kill off all replicas on one side, the behaviour I observed is that all data will be lost when the POD came back up. Not sure if there a configuration to automate the data sync, something I will have to find out.
-In this case, I need to go over to the backup site's web console, initiate a Transfer to push the data over to the recovered cluster, then all this well. Of course, i have only 10 records in my cluster, for actual production workload, there will be other considerations.
+
+To sync the data from backup site, I need to go over to the backup site's web console, initiate a Transfer to push the data over to the recovered cluster.
 
 We have just scratched the surface of a simple cross site setup, hope this is useful! That's all for now!
 
