@@ -287,7 +287,7 @@ There are a few ways to create the cache,
 
 The web / admin console of the RHDG cluster can be access via the exposed route. i.e. `oc get route` to see it.
 
-Use the hostname (port 80) of the route to access the admin console. You will be prompted for the credentials and if you have yet to get them, go to the terminal and run this:  
+Use the the route to access the admin console. You will be prompted for the credentials and if you have yet to get them, go to the terminal and run this:  
 
         $ oc get secret example-infinispan-generated-secret -o jsonpath="{.data.identities\.yaml}" | base64 --decode
         credentials:
