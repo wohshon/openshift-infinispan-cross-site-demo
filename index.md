@@ -1,6 +1,10 @@
 ## Red Hat DataGrid / Infinispan Cross Site demo on Openshift Container Platform
 
+**Updated for On-premise setup**
+
 This is to document a demo setup for 2 cross site infinispan clusters deployed on 2 Openshift Container Platform. In today's context of multi, hybrid cloud deployments,  I am particularly interested in seeing workloads deployed across multiple 'clouds', especially where states can be preserved; so that we can leverage on the capabilities to explore load distribution or failover usecases.
+
+This was tested on 2 Openshift Container Platform clusters in AWS (using the `LoadBalancer` connector), as well as 2 on premise clusters (using the `NodePort` connector).
 
 This demo uses Red Hat's distribution of the opensource **Infinispan** in-memory cache and **Kubernetes** platform; namely:
 
@@ -27,8 +31,21 @@ c2 : cluster2
 
 ### Environment setup
 
-I have access to 2 running OCP clusters in AWS, all in ap-southeast region. For this demo, having the clusters deployed in a public cloud is **crucial** as I will be using the `LoadBalancer` ingress to connect the 2 RHDG clusters. For on premise setup, the other option is to use a `NodePort`, I have yet to try it. 
-For the LoadBalancer ingress, the Infinispan Operator [checks](https://github.com/infinispan/infinispan-operator/blob/af542c4e456b42a962b1a07fe62f8559c23ec784/pkg/controller/infinispan/xsite.go#L206) for the `Service`'s object `LoadBalancer: ingress` value, so if you try to hack it with the `ExternalIPs` of your own load balancer, it will not work.
+#### On Public Cloud
+
+I have access to 2 running OCP clusters in AWS, all in ap-southeast region. For this demo, having the clusters deployed in a public cloud is **crucial** as I will be using the `LoadBalancer` ingress to connect the 2 RHDG clusters. For on premise setup, the other option is to use a `NodePort`, I have yet to try it (updated in the next section). 
+For the LoadBalancer ingress, the Infinispan Operator [checks](https://github.com/infinispan/infinispan-operator/blob/af542c4e456b42a962b1a07fe62f8559c23ec784/pkg/controller/infinispan/xsite.go#L206) for the `Service`'s object `LoadBalancer: ingress` value, so your cloud provider needs to implement it correctly,  hacking it with the `ExternalIPs` of your own load balancer, will not work.
+
+
+#### On Premise (** updated **)
+
+This was tested using 2 OCP clusters that are installed on premise. After the initial test which failed (Got a `Generic error in managing x-site coordinators` error message). I tore down everything and setup from scratch. This time round, I let the clusters negotiate the x-site handshakes a little longer and I found that the clusters did connect to each other.
+
+    $ oc logs -f example-infinispan-0 | grep x-site
+    15:36:50,046 INFO  (jgroups-5,example-infinispan-0-11602) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c1]
+    15:37:01,112 INFO  (jgroups-5,example-infinispan-0-11602) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c1, c2]
+
+
 
 #### Setting up the base environment
 
@@ -76,11 +93,13 @@ After you installed the operator, proceed with the following steps:
 
 OK, the scaffolding stuffs should be done by now. Next step is to deploy the RHDG cluster on both sides, as we have already deployed the operator. 
 
-#### Installing the clusters
+#### Installing the Infinispan clusters using Operators
 
 We will now construct the CRD for the 2 clusters, which is pretty much symmetrical. Do note that for cross site to work, both namespaces and cluster name across the OCP clusters needs to be the same.
 
 The CRD yaml definitions are as follows:
+
+#### A) On public cloud (AWS)
 
 - c1: replace the url endpoints before using
 
@@ -147,7 +166,82 @@ spec:
   expose: 
     type: Route
 ```
-- save the yaml contents into a yaml file and deploy them to the OCP clusters respectively
+
+#### B)** Updated **For On Premise, the CRD definitions I used are appended
+
+- c1: replace the url endpoints before using, note the sites are exposed as NodePorts. According to documents, the NodePort connector only works on `the same network`, I believe it means in the same subnet, which is true in my demo setup.
+
+```
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: example-infinispan
+spec:
+  replicas: 2
+  service:
+    type: DataGrid
+    sites:
+      local:
+        name: c1
+        expose:
+          type: NodePort
+          nodePort: 32556
+      locations:
+        - name: c1
+          url: openshift://api.apps.ocpcluster1.<yourdomain>.com:6443
+          secretName: c1-token
+        - name: c2
+          url: openshift://api.apps.ocpcluster2.<yourdomain>.com:6443
+          secretName: c2-token
+  logging: 
+    categories:
+      org.infinispan: trace
+      org.jgroups: trace
+      org.jgroups.protocols.TCP: debug
+      org.jgroups.protocols.relay.RELAY2: debug      
+  expose: 
+    type: Route
+```
+
+- c2: replace the url endpoints before using, note the sites are exposed as NodePorts.
+
+```
+apiVersion: infinispan.org/v1
+kind: Infinispan
+metadata:
+  name: example-infinispan
+spec:
+  replicas: 2
+  service:
+    type: DataGrid
+    sites:
+      local:
+        name: c2
+        expose:
+          type: NodePort
+          nodePort: 32616
+      locations:
+        - name: c2
+          url: openshift://api.apps.ocpcluster2.<yourdomain>.com:6443
+          secretName: c2-token
+        - name: c1
+          url: openshift://api.apps.ocpcluster1.<yourdomain>.com:6443
+          secretName: c1-token
+  logging: 
+    categories:
+      org.infinispan: trace
+      org.jgroups: trace
+      org.jgroups.protocols.TCP: debug
+      org.jgroups.protocols.relay.RELAY2: debug      
+  expose: 
+    type: Route
+```
+
+
+### Deploying the cluster
+
+- save the yaml contents above (either the cloud or on prem ones) into a yaml file and deploy them to the OCP clusters (c1, c2) respectively
+
 
 e.g. on cluster 1
 
@@ -179,6 +273,7 @@ To ensure the cross-site setup is successful, check the logs on both clusters, t
         15:34:04,378 INFO  (jgroups-98,example-infinispan-0-64507) [org.infinispan.XSITE] ISPN000439: Received new x-site view: [c1, c2]
 
 You can also see a `configmap` generated to hold the configuration of the infinispan cluster
+
 
 #### Creating the caches
 
