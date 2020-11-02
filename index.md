@@ -1,6 +1,6 @@
 ## Red Hat DataGrid / Infinispan Cross Site demo on Openshift Container Platform
 
-**Updated for On-premise setup**
+**  **Updated for On-premise setup** **
 
 This is to document a demo setup for 2 cross site infinispan clusters deployed on 2 Openshift Container Platform. In today's context of multi, hybrid cloud deployments,  I am particularly interested in seeing workloads deployed across multiple 'clouds', especially where states can be preserved; so that we can leverage on the capabilities to explore load distribution or failover usecases.
 
